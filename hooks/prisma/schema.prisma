@@ -1,14 +1,61 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // You can use any database supported by Prisma
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  zaps        Zap[]
+}
+
+model App {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  triggers    Trigger[]
+  actions     Action[]
+}
+
+model Zap {
+  id          Int      @id @default(autoincrement())
+  name        String
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  triggerId   Int
+  trigger     Trigger  @relation(fields: [triggerId], references: [id])
+  actionId    Int
+  action      Action   @relation(fields: [actionId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Trigger {
+  id          Int      @id @default(autoincrement())
+  name        String
+  appId       Int
+  app         App      @relation(fields: [appId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  zaps        Zap[]
+}
+
+model Action {
+  id          Int      @id @default(autoincrement())
+  name        String
+  appId       Int
+  app         App      @relation(fields: [appId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  zaps        Zap[]
 }
