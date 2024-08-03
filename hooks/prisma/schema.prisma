@@ -1,61 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // You can use any database supported by Prisma
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  name        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  zaps        Zap[]
-}
-
-model App {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  triggers    Trigger[]
-  actions     Action[]
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String
+  password String
+  zaps     Zap[]
 }
 
 model Zap {
-  id          Int      @id @default(autoincrement())
-  name        String
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  triggerId   Int
-  trigger     Trigger  @relation(fields: [triggerId], references: [id])
-  actionId    Int
-  action      Action   @relation(fields: [actionId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String  @id @default(uuid())
+  triggerId    String
+  userId       Int
+  trigger      Trigger?
+  actions      Action[]
+  user         User @relation(fields: [userId], references: [id])
+  zapRuns      zapRun[]
 }
 
 model Trigger {
-  id          Int      @id @default(autoincrement())
-  name        String
-  appId       Int
-  app         App      @relation(fields: [appId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  zaps        Zap[]
+  id          String  @id @default(uuid())
+  zapId       String  @unique
+  triggerId   String
+  type  AvailableTrigger @relation(fields: [triggerId], references: [id])
+  zap  Zap                @relation(fields: [zapId], references: [id])
 }
 
 model Action {
-  id          Int      @id @default(autoincrement())
-  name        String
-  appId       Int
-  app         App      @relation(fields: [appId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  zaps        Zap[]
+  id        String  @id @default(uuid())
+  zapId     String  
+  zap       Zap     @relation(fields: [zapId], references: [id])
+  actionId  String
+  type      AvailableAction @relation(fields: [actionId], references: [id])
+}
+
+model AvailableAction {
+  id       String @id @default(uuid())
+  name     String
+  image    String
+  actions  Action[]
+}
+
+model AvailableTrigger {
+  id       String @id @default(uuid())
+  name     String 
+  image    String
+  triggers Trigger[]
+}
+
+model zapRun  {
+  id          String @id @default(uuid())
+  zapId       String
+  zap         Zap    @relation(fields:[zapId], references: [id])
+  ZapOutbox   ZapOutbox?
+}
+
+model ZapOutbox  {
+  id           String @id @default(uuid())
+  zapRunId     String @unique
+  zapRun       zapRun @relation(fields:[zapRunId], references: [id])
 }
