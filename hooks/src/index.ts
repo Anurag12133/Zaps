@@ -4,19 +4,29 @@ import { PrismaClient } from "@prisma/client";
 const client = new PrismaClient();
 
 const app = express();
-app.post("/", async (req: any, res: any) => {
+app.use(express.json());
+
+app.post("/hooks/catch/:userId/:zapId", async (req, res) => {
   const zapId = req.params.zapId;
   const body = req.body;
   await client.$transaction(async (tx) => {
-    const run = await client.zapRun.create({
+    const run = await tx.zapRun.create({
       data: {
         zapId: zapId,
+        metadata: body,
       },
     });
-    const zapOutbox = await client.zapOutbox.create({
+
+    await tx.zapOutbox.create({
       data: {
         zapRunId: run.id,
       },
     });
   });
+
+  res.json({
+    message: "Webhook received",
+  });
 });
+
+app.listen(3000);
