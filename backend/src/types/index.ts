@@ -1,15 +1,23 @@
 import { z } from "zod";
 
-const signupSchema = z.object({
-  username: z.string().email(),
+export const signupSchema = z.object({
+  username: z.string().min(5),
   password: z.string().min(6),
-  name: z.string().optional(),
+  name: z.string().min(3),
 });
 
-const signinSchema = z.object({
-  username: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().optional(),
+export const signinSchema = z.object({
+  username: z.string(),
+  password: z.string(),
 });
 
-export { signinSchema, signupSchema };
+export const ZapCreateSchema = z.object({
+  availableTriggerId: z.string(),
+  triggerMetadata: z.any().optional(),
+  actions: z.array(
+    z.object({
+      availableActionId: z.string(),
+      actionMetadata: z.any().optional(),
+    })
+  ),
+});

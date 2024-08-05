@@ -1,63 +1,73 @@
 import { Router } from "express";
-import { Request, Response } from "express";
 import { authMiddleware } from "../authMidddleware";
-import { signupSchema } from "../types";
+import { signinSchema, signupSchema } from "../types";
 import { prismaClient } from "../db";
 import jwt from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 
 const router = Router();
 
-router.post("/sigup", async (req: Request, res: Response) => {
-  const body = req.body.email;
+router.post("/signup", async (req, res) => {
+  const body = req.body;
   const parsedData = signupSchema.safeParse(body);
 
-  if (!parsedData) {
-    return res.json({
-      message: "Incorrect Credentials",
+  if (!parsedData.success) {
+    return res.status(411).json({
+      message: "Incorrect inputs",
     });
   }
-  const ExsistingUser = await prismaClient.user.findFirst({
+
+  const userExists = await prismaClient.user.findFirst({
     where: {
-      email: parsedData.data?.username,
+      email: parsedData.data.username,
     },
   });
-  if (ExsistingUser) {
+
+  if (userExists) {
     return res.status(403).json({
-      message: "User Already exsist.",
+      message: "User already exists",
     });
   }
 
   await prismaClient.user.create({
     data: {
-      email: parsedData.data?.username || "",
-      password: parsedData.data?.password || "",
-      name: parsedData.data?.name || "",
+      email: parsedData.data.username,
+      password: parsedData.data.password,
+      name: parsedData.data.name,
     },
+  });
+
+  // await sendEmail();
+
+  return res.json({
+    message: "Please verify your account by checking your email",
   });
 });
 
-router.post("/sigin", async (req: Request, res: Response) => {
-  const body = req.body.email;
-  const parsedData = signupSchema.safeParse(body);
+router.post("/signin", async (req, res) => {
+  const body = req.body;
+  const parsedData = signinSchema.safeParse(body);
 
-  if (!parsedData) {
-    return res.json({
-      message: "Incorrect Credentials",
+  if (!parsedData.success) {
+    return res.status(411).json({
+      message: "Incorrect inputs",
     });
   }
+
   const user = await prismaClient.user.findFirst({
     where: {
-      email: parsedData.data?.username,
-      password: parsedData.data?.password,
+      email: parsedData.data.username,
+      password: parsedData.data.password,
     },
   });
 
   if (!user) {
-    return res.status(411).json({
-      message: "Wrong Credentials !",
+    return res.status(403).json({
+      message: "Sorry credentials are incorrect",
     });
   }
+
+  // sign the jwt
   const token = jwt.sign(
     {
       id: user.id,
@@ -70,10 +80,9 @@ router.post("/sigin", async (req: Request, res: Response) => {
   });
 });
 
-router.get("/user", authMiddleware, async (req: Request, res: Response) => {
-  //@ts-ignore
+router.get("/", authMiddleware, async (req, res) => {
+  // @ts-ignore
   const id = req.id;
-
   const user = await prismaClient.user.findFirst({
     where: {
       id,
@@ -83,7 +92,8 @@ router.get("/user", authMiddleware, async (req: Request, res: Response) => {
       email: true,
     },
   });
-  res.json({
+
+  return res.json({
     user,
   });
 });
