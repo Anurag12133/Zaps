@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { authMiddleware } from "../authMidddleware";
 import { signupSchema } from "../types";
 import { prismaClient } from "../db";
+import jwt from "jsonwebtoken";
+import { JWT_PASSWORD } from "../config";
 
 const router = Router();
 
@@ -56,10 +58,34 @@ router.post("/sigin", async (req: Request, res: Response) => {
       message: "Wrong Credentials !",
     });
   }
+  const token = jwt.sign(
+    {
+      id: user.id,
+    },
+    JWT_PASSWORD
+  );
+
+  res.json({
+    token: token,
+  });
 });
 
-router.get("/user", authMiddleware, (req: Request, res: Response) => {
-  console.log("Data");
+router.get("/user", authMiddleware, async (req: Request, res: Response) => {
+  //@ts-ignore
+  const id = req.id;
+
+  const user = await prismaClient.user.findFirst({
+    where: {
+      id,
+    },
+    select: {
+      name: true,
+      email: true,
+    },
+  });
+  res.json({
+    user,
+  });
 });
 
 export const userRouter = router;
