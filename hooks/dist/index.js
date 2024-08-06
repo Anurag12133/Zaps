@@ -20,7 +20,6 @@ app.use(express_1.default.json());
 app.post("/hooks/catch/:userId/:zapId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const zapId = req.params.zapId;
     const body = req.body;
-    console.log("Done");
     yield client.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         const run = yield tx.zapRun.create({
             data: {
